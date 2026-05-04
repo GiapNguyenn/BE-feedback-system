@@ -1,0 +1,17 @@
+# Thư viện (Rất nặng, không nên commit)
+node_modules/
+
+# File nhật ký lỗi
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# File chứa thông tin bảo mật
+.env
+
+# File upload
+uploads/
+
+# Thư mục build
+dist/
+build/
