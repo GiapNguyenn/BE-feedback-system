@@ -26,17 +26,6 @@ app.use(cors({
 }));
 app.use(express.json());
 
-app.use((err, req, res, next) => {
-  if (err instanceof multer.MulterError) {
-    if (err.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({ success: false, message: "File quá lớn! Tối đa chỉ 2MB." });
-    }
-    return res.status(400).json({ success: false, message: err.message });
-  } else if (err) {
-    return res.status(400).json({ success: false, message: err.message });
-  }
-  next();
-});
 app.use("/api/otp", otpRoutes);
 app.use("/api/admin/teachers",teacherRoutes);
 app.use("/api/admin",logSystems)
@@ -51,6 +40,35 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/api/feedback",checkMaintenance, feedbackRoutes);
 app.use("/api/classes",checkMaintenance, classRoutes );
 app.use('/api/progress',checkMaintenance, progressRoutes);
+
+// Global error handler — bắt mọi lỗi throw từ controller/service
+app.use((err, req, res, next) => {
+    console.error(`[ERROR] ${req.method} ${req.originalUrl}:`, err.message);
+
+    // Lỗi Multer (upload file)
+    if (err.code === "LIMIT_FILE_SIZE") {
+        return res.status(400).json({ success: false, message: "File quá lớn! Tối đa chỉ 2MB." });
+    }
+    if (err.name === "MulterError") {
+        return res.status(400).json({ success: false, message: err.message });
+    }
+
+    // Lỗi JWT
+    if (err.name === "JsonWebTokenError" || err.name === "TokenExpiredError") {
+        return res.status(401).json({ success: false, message: "Token không hợp lệ" });
+    }
+
+    // Lỗi SQL Server
+    if (err.code && err.code.startsWith("EREQUEST")) {
+        return res.status(400).json({ success: false, message: "Lỗi truy vấn cơ sở dữ liệu" });
+    }
+
+    // Mặc định
+    res.status(err.status || 500).json({
+        success: false,
+        message: err.message || "Lỗi hệ thống, vui lòng thử lại sau"
+    });
+});
 
 app.listen(5000, () => {
   console.log("Server running on port 5000");

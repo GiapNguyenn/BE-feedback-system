@@ -1,5 +1,6 @@
 const { sql, poolPromise } = require("../config/db");
-const { generateToken } = require("../helper/jwt");
+const { generateToken, generateRefreshToken, verifyRefreshToken } = require("../helper/jwt");
+
 const jwt = require("jsonwebtoken");
 const xlsx = require("xlsx");
 const bcrypt = require("bcrypt");
@@ -88,6 +89,24 @@ exports.getStudentsByTeacher = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+exports.refreshToken = async (req, res) => {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+        return res.status(401).json({ success: false, message: "Thiếu refresh token" });
+    }
+
+    const decoded = verifyRefreshToken(refreshToken);
+
+    if (!decoded) {
+        return res.status(403).json({ success: false, message: "Refresh token không hợp lệ hoặc đã hết hạn, vui lòng đăng nhập lại" });
+    }
+
+    const newToken = generateToken(decoded);
+    const newRefreshToken = generateRefreshToken(decoded);
+
+    res.json({ success: true, token: newToken, refreshToken: newRefreshToken });
+};
 
 //[API POST : LOGIN]
 //[API POST : LOGIN]
@@ -114,7 +133,7 @@ exports.login = async (req, res) => {
     }
 
     const token = generateToken(user);
-
+    const refreshToken = generateRefreshToken(user);
     // 2. Trả về thành công với cấu trúc rõ ràng
     res.status(200).json({
       success: true,

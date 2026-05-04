@@ -26,6 +26,6 @@ router.post("/teacher/upload-excel",
     upload.single('file'), // 'file' là tên field bên React gửi lên
     userController.uploadStudentsExcel
 );
-
+router.post("/refresh-token", userController.refreshToken);
 
 module.exports = router;
