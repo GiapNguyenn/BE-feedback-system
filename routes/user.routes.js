@@ -23,9 +23,13 @@ router.post('/teacher/create-student', authenticateToken,isTeacher, userControll
 router.post("/teacher/upload-excel", 
     authenticateToken, 
     isTeacher, 
-    upload.single('file'), // 'file' là tên field bên React gửi lên
+    upload.single('file'), 
     userController.uploadStudentsExcel
 );
+router.post('/delete-multiple', authenticateToken, userController.deleteMultipleUsers);
+router.get('/deleted/:classId', authenticateToken, userController.getDeletedStudents);
+router.post('/restore', authenticateToken, userController.restoreUser);
+router.post('/hard-delete', authenticateToken, userController.hardDeleteUsers);
 router.post("/refresh-token", userController.refreshToken);
 
 module.exports = router;

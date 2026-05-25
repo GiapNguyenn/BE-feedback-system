@@ -20,7 +20,6 @@ const saveLog = async (data) => {
             VALUES (@userId, @level, @action, @description, @ipAddress, @metadata, GETDATE())
         `);
 
-        console.log("ĐÃ GHI VÀO SQL THÀNH CÔNG!");
     } catch (err) {
         console.log("LỖI SQL RỒI:");
         console.error(err.message);

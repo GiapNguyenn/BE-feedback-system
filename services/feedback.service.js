@@ -32,7 +32,7 @@ const getFeedbackDraftService = async (submissionId, teacherId) => {
         return {draft : parsed};
 
     } catch (error) {
-        console.error("LỖI TẠI SERVICE:", error); // Dòng này sẽ cứu bạn!
+        console.error("LỖI TẠI SERVICE:", error); 
         throw error; // Ném ra để Controller bắt được lỗi 500
     }
 

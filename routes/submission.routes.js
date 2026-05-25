@@ -20,7 +20,7 @@ const submissionLimiter = rateLimit({
 router.post(
   "/upload", 
   authenticateToken, 
-  submissionLimiter, // 👈 Đặt nó ở đây, trước khi upload và controller
+  submissionLimiter, 
   upload.single("file"), 
   submissionController.submitExercise
 );

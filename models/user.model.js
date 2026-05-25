@@ -94,6 +94,7 @@ const getStudentsInClass = async (classId, teacherId, searchTerm, pagination) =>
       JOIN Classes c ON u.classId = c.id
       WHERE u.classId = @classId 
         AND c.teacherId = @tId
+        AND u.isDeleted = 0
         AND (u.studentCode LIKE @search OR u.fullName LIKE @search)
     `);
 
@@ -110,6 +111,7 @@ const getStudentsInClass = async (classId, teacherId, searchTerm, pagination) =>
       JOIN Classes c ON u.classId = c.id
       WHERE u.classId = @classId 
         AND c.teacherId = @tId
+        AND u.isDeleted = 0
         AND (u.studentCode LIKE @search OR u.fullName LIKE @search)
       ORDER BY u.id 
       OFFSET ${pagination.skip} ROWS 
@@ -264,6 +266,35 @@ const findByEmail = async (email) => {
         .query("SELECT * FROM Users WHERE email = @email");
     return result.recordset[0]; // Trả về user đầu tiên tìm thấy hoặc undefined
 };
+const deleteMultipleUsers = async (userIds) => {
+    const pool = await poolPromise;
+    await pool.request()
+        .input('UserIds', sql.NVarChar, userIds.join(','))
+        .execute('sp_DeleteMultipleUsers');
+    return { success: true };
+};
+const getDeletedStudents = async (classId , teacherId) => {
+  const pool =await poolPromise;
+  const result = await pool.request()
+    .input('ClassId',sql.Int,classId)
+    .input('TeacherId', sql.Int, teacherId)
+    .execute('sp_GetDeletedStudents');
+    return result.recordset;
+}
+const restoreUsers = async (userIds) => {
+    const pool = await poolPromise;
+    await pool.request()
+        .input('UserIds', sql.NVarChar, userIds.join(','))
+        .execute('sp_RestoreUsers'); 
+    return { success: true };
+};
+const hardDeleteUsers = async (userIds) => {
+    const pool = await poolPromise;
+    await pool.request()
+        .input('UserIds', sql.NVarChar, userIds.join(','))
+        .execute('sp_HardDeleteUsers');
+    return { success: true };
+};
 
 module.exports = {
     register,
@@ -279,6 +310,10 @@ module.exports = {
     findUser,
     updateClass,
     insertUser,
-    findByEmail
+    findByEmail,
+    deleteMultipleUsers,
+    getDeletedStudents,
+    restoreUsers,
+    hardDeleteUsers
 
 }

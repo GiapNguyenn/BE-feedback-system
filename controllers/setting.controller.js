@@ -12,11 +12,10 @@ exports.getMaintenanceStatus = async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 };
-
 // Cập nhật trạng thái bảo trì
 exports.updateMaintenanceStatus = async (req, res) => {
     try {
-        const { status } = req.body; // Frontend gửi lên { status: true } hoặc { status: false }
+        const { status } = req.body; 
         
         // Lưu vào DB dưới dạng chuỗi 'true'/'false'
         await settingModel.updateSetting('MAINTENANCE_MODE', status.toString());

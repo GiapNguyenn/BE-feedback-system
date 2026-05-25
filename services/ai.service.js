@@ -74,8 +74,8 @@ DỮ LIỆU ĐẦU VÀO:
 - Bạn phải trích xuất chính xác "tên_file" từ dòng đánh dấu này để điền vào trường "file".
 
 NHIỆM VỤ:
-- Tìm lỗi dựa trên tiêu chí: ${categories}
-- Chỉ báo lỗi khi CHẮC CHẮN sai. Nếu thiếu context (class cha, import...), hãy BỎ QUA.
+- Tìm lỗi dựa trên các danh mục lỗi phổ biến trong bảng: ${categories}
+- Chỉ báo lỗi khi CHẮC CHẮN sai. Nếu thiếu context (class cha, import...), hãy BỎ QUA
 - Quan trọng: Số dòng (line) phải được tính lại từ 1 cho mỗi file mới (dòng bắt đầu bằng /* --- FILE: ... --- */ coi như dòng 0).
 
 YÊU CẦU TRẢ VỀ:
@@ -87,7 +87,7 @@ CẤU TRÚC JSON:
   {
     "file": "Tên file trích xuất được",
     "line": số_dòng_trong_file,
-    "error": "[File: tên_file] + mô tả lỗi ngắn gọn",
+    "error": "[File: tên_file] + mô tả lỗi ngắn gọn ",
     "fix": "Code_sai -> Giải thích ngắn -> Code_đúng"
   }
 ]

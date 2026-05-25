@@ -103,7 +103,7 @@ const saveOficialFeedback = async (submissionId, teacherId, weakness, strengths,
             'FEEDBACK', 
             0, 
             GETDATE(),
-            Id -- 💡 Lấy Id của Submissions nạp vào đây
+            Id -- Lấy Id của Submissions nạp vào đây
         FROM Submissions WHERE Id = @sId
     `);
 

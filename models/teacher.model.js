@@ -12,7 +12,7 @@ const getAllTeachers = async (skip, limit) => {
       SELECT 
         u.id, u.fullName, u.email, u.createdAt,
         COUNT(c.id) as totalClasses,
-        COUNT(*) OVER() as totalCount -- 💡 Lấy tổng số dòng để tính totalPage
+        COUNT(*) OVER() as totalCount 
       FROM Users u
       LEFT JOIN Classes c ON c.teacherId = u.id
       WHERE u.roleId = 3
