@@ -95,7 +95,9 @@ CẤU TRÚC JSON:
 NỘI DUNG CODE CẦN PHÂN TÍCH:
 ${Code}
 `;
-    const model = ai.getGenerativeModel({ model: "gemini-2.5-flash" }); // Đảm bảo model name đúng
+    const model = ai.getGenerativeModel({
+    model: "gemini-2.5-flash",
+    generationConfig: { temperature: 0 } }); // Đảm bảo model name đúng
     const aiResult = await model.generateContent(prompt);
     const answer = aiResult.response.text();
     const cleanText = answer.replace(/```json|```/g, "").trim();

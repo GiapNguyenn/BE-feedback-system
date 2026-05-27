@@ -15,18 +15,13 @@ const analyzeSubmissionService = async (submissionId) => {
 
   const { Code, Language } = submission;
 
-  // 2. Tạo history
-  const analysisId = await submissionModel.createAnalysis(submissionId);
+const categories = await submissionModel.getErrorCategories(Language); // ← check trước
 
-  // 3. Lấy tiêu chí lỗi
-  const categories = await submissionModel.getErrorCategories(Language);
-  
 if (!categories) {
-  return {
-    success: false,
-    message: `Ngôn ngữ "${Language}" chưa có trong danh mục tiêu chí lỗi của hệ thống.`
-  };
+  return { success: false, message: `Ngôn ngữ "${Language}" chưa có...` };
 }
+
+const analysisId = await submissionModel.createAnalysis(submissionId); // ← chỉ tạo khi có danh mục
 
   // 4. Gọi AI
   const { rawText } = await aiService.generateAnalysis({
