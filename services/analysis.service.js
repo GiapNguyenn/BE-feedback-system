@@ -20,9 +20,12 @@ const analyzeSubmissionService = async (submissionId) => {
 
   // 3. Lấy tiêu chí lỗi
   const categories = await submissionModel.getErrorCategories(Language);
-
-if (!categories || categories.length === 0) {
-    throw new Error(`Không có tiêu chí lỗi cho ngôn ngữ: ${Language}`);
+  
+if (!categories) {
+  return {
+    success: false,
+    message: `Ngôn ngữ "${Language}" chưa có trong danh mục tiêu chí lỗi của hệ thống.`
+  };
 }
 
   // 4. Gọi AI

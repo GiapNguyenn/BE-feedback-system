@@ -7,12 +7,15 @@ const chatService = require("../services/chat.service");
 
 exports.getAnalysisHistory = async (req, res) => {
   const { id } = req.params;
-
   try {
     const data = await analysisModel.getAnalysisHistory(id);
 
     if (!data) {
-      return res.status(404).json({ message: "Không tìm thấy lịch sử phân tích" });
+      // Thay vì 404, trả 200 với flag để FE xử lý
+      return res.json({ 
+        noAnalysis: true,
+        message: "Bài này chưa được phân tích." 
+      });
     }
 
     res.json({
@@ -21,9 +24,7 @@ exports.getAnalysisHistory = async (req, res) => {
       createdAt: data.createdAt,
       issues: JSON.parse(data.issuesJSON || "[]")
     });
-
   } catch (err) {
-    console.error("ERROR:", err);
     res.status(500).json({ message: err.message });
   }
 };

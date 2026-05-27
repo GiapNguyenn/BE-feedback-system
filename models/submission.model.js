@@ -33,10 +33,9 @@ const getErrorCategories = async (language) => {
   const result = await pool.request()
     .input("Language", sql.NVarChar, language)
     .execute("sp_GetErrorPatternsByLanguage");
-
-//   if (result.recordset.length === 0) {
-//     return "- Lỗi logic\n- Lỗi cú pháp\n- Clean code";
-//   }
+  if (result.recordset.length === 0) {
+    return null;  
+  }
 
   return result.recordset.map(e => `- ${e.errorCategory}`).join("\n");
 };

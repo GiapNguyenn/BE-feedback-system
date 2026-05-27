@@ -20,7 +20,12 @@ exports.analyzeSubmission = async (req, res) => {
   try {
     const result = await analysisService.analyzeSubmissionService(submissionId);
 
-    res.json(result);
+    if (result && result.success === false) {
+      return res.json(result);
+    }
+
+    return res.json(result); // ← THIẾU DÒNG NÀY
+    
   } catch (err) {
     console.error("LỖI:", err);
     res.status(500).json({ success: false, message: err.message });
