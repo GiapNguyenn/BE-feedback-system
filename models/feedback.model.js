@@ -1,4 +1,5 @@
 const { poolPromise, sql } = require("../config/db");
+const paginationHelper = require('../helper/paginationHelper');
 
 
 const getExistingDraft = async (submissionId) => {
@@ -58,7 +59,7 @@ const upsertFeedback = async (submissionId, teacherId , cleanJson , parsed) => {
 const saveOficialFeedback = async (submissionId, teacherId, weakness, strengths, comment) => {
     const pool = await poolPromise;
     
-    // 1. Cập nhật hoặc Chèn vào bảng TeacherFeedbacks (Giữ nguyên logic cũ của bạn)
+    // 1. Cập nhật hoặc Chèn vào bảng TeacherFeedbacks
     const result = await pool.request()
         .input("sId", sql.Int, submissionId)
         .input("tId", sql.Int, teacherId)
@@ -86,34 +87,50 @@ const saveOficialFeedback = async (submissionId, teacherId, weakness, strengths,
             `);
     }
 
-    // 2. Cập nhật trạng thái bài nộp thành "Đã nhận xét"
+    // 2. TẠO THÔNG BÁO CHO SINH VIÊN
     await pool.request()
         .input("sId", sql.Int, submissionId)
-        .query(`UPDATE Submissions SET Status = N'Đã nhận xét' WHERE Id = @sId`);
-
-    //  3. BƯỚC MỚI: TẠO THÔNG BÁO CHO SINH VIÊN
-    await pool.request()
-    .input("sId", sql.Int, submissionId)
-    .query(`
-        INSERT INTO Notifications (UserId, Title, Message, Type, IsRead, CreatedAt, SubmissionId)
-        SELECT 
-            UserId, 
-            N'Bài tập đã được chấm', 
-            N'Giảng viên đã gửi nhận xét cho bài: ' + FileName, 
-            'FEEDBACK', 
-            0, 
-            GETDATE(),
-            Id -- Lấy Id của Submissions nạp vào đây
-        FROM Submissions WHERE Id = @sId
-    `);
+        .query(`
+            INSERT INTO Notifications (UserId, Title, Message, Type, IsRead, CreatedAt, SubmissionId)
+            SELECT 
+                UserId, 
+                N'Bài tập đã được chấm', 
+                N'Giảng viên đã gửi nhận xét cho bài: ' + FileName, 
+                'FEEDBACK', 
+                0, 
+                GETDATE(),
+                Id
+            FROM Submissions WHERE Id = @sId
+        `);
 
     return true;
 };
 
 
-const getAllSubmissionsForAdmin = async (teacherId, classId) => {
+const getAllSubmissionsForAdmin = async (teacherId, classId, page = 1, limitItems = 10) => {
     const pool = await poolPromise;
 
+    // 1. Đếm tổng để tính phân trang
+    let countQuery = `
+        SELECT COUNT(*) as total
+        FROM Submissions s
+        JOIN Users u ON s.UserId = u.Id
+        JOIN Classes c ON u.classId = c.id
+        LEFT JOIN TeacherFeedbacks tf ON tf.SubmissionId = s.Id
+        WHERE c.TeacherId = @tId
+    `;
+    if (classId) countQuery += ` AND u.classId = @classId`;
+
+    const countRequest = pool.request().input("tId", sql.Int, teacherId);
+    if (classId) countRequest.input("classId", sql.Int, classId);
+    const countResult = await countRequest.query(countQuery);
+    const totalCount = countResult.recordset[0].total;
+
+    // 2. Tính phân trang bằng helper
+    let objectPagination = { currentPage: 1, limitItems, skip: 0, totalPage: 1 };
+    objectPagination = paginationHelper(objectPagination, { page }, totalCount);
+
+    // 3. Query chính có OFFSET
     let query = `
         SELECT 
             s.Id as id, 
@@ -122,7 +139,10 @@ const getAllSubmissionsForAdmin = async (teacherId, classId) => {
             c.className,
             s.FileName as assignmentTitle, 
             s.Language as language,
-            s.Status as status,
+            CASE 
+                WHEN tf.Id IS NOT NULL THEN N'Đã nhận xét' 
+                ELSE N'Chờ nhận xét' 
+            END AS status,
             (
                 SELECT COUNT(*) 
                 FROM DetectedErrors de 
@@ -132,25 +152,25 @@ const getAllSubmissionsForAdmin = async (teacherId, classId) => {
         FROM Submissions s
         JOIN Users u ON s.UserId = u.Id
         JOIN Classes c ON u.classId = c.id
+        LEFT JOIN TeacherFeedbacks tf ON tf.SubmissionId = s.Id
         WHERE c.TeacherId = @tId
     `;
-
-    if (classId) {
-        query += ` AND u.classId = @classId`;
-    }
-
-    query += ` ORDER BY s.CreatedAt DESC`;
+    if (classId) query += ` AND u.classId = @classId`;
+    query += ` ORDER BY s.CreatedAt DESC
+               OFFSET @skip ROWS FETCH NEXT @limit ROWS ONLY`;
 
     const request = pool.request()
-        .input("tId", sql.Int, teacherId);
-
-    if (classId) {
-        request.input("classId", sql.Int, classId);
-    }
+        .input("tId", sql.Int, teacherId)
+        .input("skip", sql.Int, objectPagination.skip)
+        .input("limit", sql.Int, objectPagination.limitItems);
+    if (classId) request.input("classId", sql.Int, classId);
 
     const result = await request.query(query);
 
-    return result.recordset;
+    return {
+        data: result.recordset,
+        pagination: objectPagination
+    };
 };
 const getAllClasses = async (teacherId) => {
     const pool = await poolPromise;

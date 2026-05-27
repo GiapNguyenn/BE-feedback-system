@@ -42,16 +42,17 @@ exports.getAllClasses = async (req, res) => {
 };
 
 exports.getAllSubmissionsForAdmin = async (req, res) => {
-    const { classId } = req.query;
+    const { classId, page } = req.query; // thêm page
     const teacherId = req.user.id;
 
     try {
-        const data = await feedbackModel.getAllSubmissionsForAdmin(
+        const result = await feedbackModel.getAllSubmissionsForAdmin(
             teacherId,
-            classId
+            classId,
+            page // truyền vào
         );
 
-        res.json({ success: true, data });
+        res.json({ success: true, ...result }); // spread ra để có data + pagination
     } catch (err) {
         res.status(500).json({
             success: false,

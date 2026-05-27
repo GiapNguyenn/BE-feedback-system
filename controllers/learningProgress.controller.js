@@ -1,30 +1,30 @@
 const { sql, poolPromise } = require("../config/db");
 
-// 1. Lấy danh sách cảnh báo (Xử lý kết quả từ Store Procedure)
 exports.getRiskAssessment = async (req, res) => {
     try {
         const teacherId = req.user.id;
+        const classId = req.query.classId;
+
+        if (!classId) {
+            return res.status(400).json({ success: false, message: "Thiếu classId" });
+        }
+
         const pool = await poolPromise;
-        
+
         const result = await pool.request()
             .input("TeacherId", sql.Int, teacherId)
+            .input("ClassId", sql.Int, parseInt(classId))
             .execute("sp_GetStudentRiskAssessment");
 
-        // 💡 Logic: Vì SP trả về tất cả lịch sử, ta lọc lấy bản ghi MỚI NHẤT của mỗi SV
         res.json({
-        success: true,
-        data: result.recordset
+            success: true,
+            data: result.recordset
         });
 
-        res.json({ 
-            success: true, 
-            data: Object.values(studentMap) 
-        });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
 };
-
 // 2. Lấy lịch sử lỗi của 1 SV để vẽ biểu đồ đường
 exports.getStudentHistory = async (req, res) => {
     try {

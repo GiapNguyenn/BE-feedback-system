@@ -8,7 +8,7 @@ function generateToken(user) {
     return jwt.sign(
         { id: user.id, email: user.email, roleId: user.roleId, studentCode: user.studentCode },
         SECRET_KEY,
-        { expiresIn: "15m" }
+        { expiresIn: "10m" }
     );
 }
 function generateRefreshToken(user) {

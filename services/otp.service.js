@@ -5,10 +5,8 @@ const { generateOTP, hashOTP } = require("../helper/otpHelper");
 const { sendOTPEmail } = require("../services/email.service");
 
 const requestOTPService = async ({ userId, email, type, newEmail, currentPassword }) => {
-    // Đảm bảo lấy pool thành công
     const pool = await poolPromise;
  
-    // Kiểm tra an toàn: Nếu pool không có hàm request, nghĩa là config db đang lỗi
     if (!pool || typeof pool.request !== 'function') {
         throw new Error("Database connection pool is not initialized correctly");
     }
@@ -27,7 +25,7 @@ const requestOTPService = async ({ userId, email, type, newEmail, currentPasswor
         throw { status: 401, message: "Mật khẩu hiện tại không chính xác" };
     }
 
-    // 1. Check spam
+    //  Check spam
     const recent = await otpModel.findRecentOTP(userId);
     if (recent.recordset.length > 0) {
         const lastTime = new Date(recent.recordset[0].createdAt);
@@ -36,7 +34,7 @@ const requestOTPService = async ({ userId, email, type, newEmail, currentPasswor
         }
     }
 
-    // 2. Logic OTP
+    //  Logic OTP
     const otp = generateOTP();
     const hash = hashOTP(otp);
     const expiredAt = new Date(Date.now() + 5 * 60 * 1000);
@@ -63,7 +61,7 @@ const requestOTPService = async ({ userId, email, type, newEmail, currentPasswor
         return { success: true };
     } catch (err) {
         await transaction.rollback();
-        console.error("LỖI TẠI SERVICE REQUEST:", err); // Đã sửa từ error thành err
+        console.error("LỖI TẠI SERVICE REQUEST:", err); 
         throw err;
     }
 };

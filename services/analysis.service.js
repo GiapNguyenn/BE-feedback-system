@@ -21,6 +21,10 @@ const analyzeSubmissionService = async (submissionId) => {
   // 3. Lấy tiêu chí lỗi
   const categories = await submissionModel.getErrorCategories(Language);
 
+if (!categories || categories.length === 0) {
+    throw new Error(`Không có tiêu chí lỗi cho ngôn ngữ: ${Language}`);
+}
+
   // 4. Gọi AI
   const { rawText } = await aiService.generateAnalysis({
     Code,
@@ -41,7 +45,7 @@ const analyzeSubmissionService = async (submissionId) => {
   await submissionModel.saveErrorsWithTransaction(submissionId, analysisId, parsedErrors);
 
   // 7. Update submission
-  await submissionModel.updateSubmissionStatus(submissionId);
+//   await submissionModel.updateSubmissionStatus(submissionId);
 
   return {
     success: true,
@@ -111,7 +115,6 @@ const submitExerciseService = async (req) => {
         }
         codeContent = combined;
     } else {
-        // SỬA TẠI ĐÂY: Thêm Header tên file cho cả file đơn
         const rawContent = await fs.readFile(file.path, "utf8");
         codeContent = `\n/* --- FILE: ${file.originalname} --- */\n${rawContent}\n`;
     }

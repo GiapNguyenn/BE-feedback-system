@@ -95,11 +95,19 @@ exports.refreshToken = async (req, res) => {
     const decoded = verifyRefreshToken(refreshToken);
 
     if (!decoded) {
-        return res.status(403).json({ success: false, message: "Refresh token không hợp lệ hoặc đã hết hạn, vui lòng đăng nhập lại" });
+        return res.status(401).json({ success: false, message: "Refresh token hết hạn, vui lòng đăng nhập lại" });
     }
 
-    const newToken = generateToken(decoded);
-    const newRefreshToken = generateRefreshToken(decoded);
+    const userPayload = {
+        id: decoded.id,
+        email: decoded.email,
+        roleId: decoded.roleId,
+        studentCode: decoded.studentCode
+    };
+
+    // Tạo token mới dựa trên payload sạch
+    const newToken = generateToken(userPayload);
+    const newRefreshToken = generateRefreshToken(userPayload);
 
     res.json({ success: true, token: newToken, refreshToken: newRefreshToken });
 };
@@ -127,6 +135,7 @@ exports.login = async (req, res) => {
       success: true,
       message: "Đăng nhập thành công! Chào mừng " + user.fullName,
       token,
+      refreshToken,
       user: { 
         id: user.id,
         email: user.email,
@@ -332,13 +341,13 @@ exports.resetPassword = async (req, res) => {
         const transaction = new sql.Transaction(pool);
         await transaction.begin();
         try {
-            await pool.request()
-                .input("uid", sql.Int, user.id)
-                .input("pass", sql.VarChar, hashedPass)
-                .query("UPDATE Users SET password = @pass WHERE id = @uid");
+             await new sql.Request(transaction)
+              .input("uid", sql.Int, user.id)
+              .input("pass", sql.VarChar, hashedPass)
+              .query("UPDATE Users SET password = @pass WHERE id = @uid");
 
-            await otpModel.markUsed(transaction, otpData.id);
-            await transaction.commit();
+              await otpModel.markUsed(transaction, otpData.id);
+              await transaction.commit();
             await helperSaveLog.saveLog({
               userId: user.id, 
               level: 'WARNING',
@@ -392,11 +401,11 @@ exports.getDeletedStudents = async (req, res) => {
 }
 exports.restoreUser = async (req, res) => {
     try {
-      const { userIds } = req.body;
+      const { userId } = req.body;
       if (!userId || userId.length === 0) {
         return res.status(400).json({message: "Không có user nào được chọn"});
       }
-      await userModel.restoreUser(userIds);
+      await userModel.restoreUsers(userId);
       await helperSaveLog.saveLog({
         userId: req.user.id,
         level: 'INFO',

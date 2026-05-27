@@ -34,9 +34,9 @@ const getErrorCategories = async (language) => {
     .input("Language", sql.NVarChar, language)
     .execute("sp_GetErrorPatternsByLanguage");
 
-  if (result.recordset.length === 0) {
-    return "- Lỗi logic\n- Lỗi cú pháp\n- Clean code";
-  }
+//   if (result.recordset.length === 0) {
+//     return "- Lỗi logic\n- Lỗi cú pháp\n- Clean code";
+//   }
 
   return result.recordset.map(e => `- ${e.errorCategory}`).join("\n");
 };
@@ -64,13 +64,13 @@ const saveErrorsWithTransaction = async (submissionId, analysisId, errors) => {
     throw err;
   }
 };
-const updateSubmissionStatus = async (submissionId) => {
-  const pool = await poolPromise;
+// const updateSubmissionStatus = async (submissionId) => {
+//   const pool = await poolPromise;
 
-  await pool.request()
-    .input("subId", sql.Int, submissionId)
-    .query("UPDATE Submissions SET Status = 'done' WHERE Id = @subId");
-};
+//   await pool.request()
+//     .input("subId", sql.Int, submissionId)
+//     .query("UPDATE Submissions SET Status = 'done' WHERE Id = @subId");
+// };
 const checkDuplicate = async (fileName, userId) => {
     const pool = await poolPromise;
 
@@ -95,9 +95,9 @@ const insertSubmission = async ({ fileName, filePath, code, language, userId }) 
         .input("Language", sql.NVarChar, language)
         .input("UserId", sql.Int, userId)
         .query(`
-            INSERT INTO Submissions (FileName, FilePath, Code, Language, Status, UserId, CreatedAt)
+            INSERT INTO Submissions (FileName, FilePath, Code, Language, UserId, CreatedAt)
             OUTPUT INSERTED.Id
-            VALUES (@FileName, @FilePath, @Code, @Language, 'done', @UserId, GETDATE())
+            VALUES (@FileName, @FilePath, @Code, @Language, @UserId, GETDATE())
         `);
 
     return result.recordset[0].Id;
@@ -113,14 +113,15 @@ const getStudentSubmissions = async (userId) => {
                 s.FileName,
                 s.Code,
                 s.Language,
-                s.Status,
+                CASE 
+                    WHEN tf.Id IS NOT NULL THEN N'Đã nhận xét' 
+                    ELSE N'Chờ nhận xét' 
+                END AS Status,
                 s.CreatedAt,
                 s.IsPinned, 
-                -- Lấy ID phân tích mới nhất
                 (SELECT TOP 1 id FROM AnalysisHistory 
                  WHERE submissionId = s.Id 
                  ORDER BY CreatedAt DESC) as analysisId,
-                -- Lấy thêm thông tin nhận xét từ Giảng viên
                 tf.WeaknessAnalysis,
                 tf.Strengths,
                 tf.TeacherComment,
@@ -212,12 +213,16 @@ const getSubmissionById = async (id) => {
         .input("id", sql.Int, id)
         .query(`
             SELECT 
-                s.*, 
+                s.Id, s.FileName, s.FilePath, s.Code, s.Language,
+                s.CreatedAt, s.UserId, s.IsPinned,
+                CASE 
+                    WHEN tf.Id IS NOT NULL THEN N'Đã nhận xét' 
+                    ELSE N'Chờ nhận xét' 
+                END AS Status,
                 tf.WeaknessAnalysis, 
                 tf.Strengths, 
                 tf.TeacherComment, 
                 tf.Status as FeedbackStatus,
-                -- Lấy thêm analysisId mới nhất để load lỗi AI
                 (SELECT TOP 1 id FROM AnalysisHistory WHERE submissionId = s.Id ORDER BY CreatedAt DESC) as analysisId
             FROM Submissions s
             LEFT JOIN TeacherFeedbacks tf ON s.Id = tf.SubmissionId
@@ -231,7 +236,16 @@ const getAllSubmissions = async () => {
     const pool = await poolPromise;
 
     const result = await pool.request()
-        .query(`SELECT * FROM Submissions`);
+        .query(`
+            SELECT 
+                s.*,
+                CASE 
+                    WHEN tf.Id IS NOT NULL THEN N'Đã nhận xét' 
+                    ELSE N'Chờ nhận xét' 
+                END AS Status
+            FROM Submissions s
+            LEFT JOIN TeacherFeedbacks tf ON tf.SubmissionId = s.Id
+        `);
 
     return result.recordset;
 };
@@ -242,7 +256,7 @@ module.exports = {
     createAnalysis,
     getErrorCategories,
     saveErrorsWithTransaction,
-    updateSubmissionStatus,
+    // updateSubmissionStatus,
     checkDuplicate,
     insertSubmission,
     getStudentSubmissions,

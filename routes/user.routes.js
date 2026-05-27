@@ -8,6 +8,7 @@ const checkMaintenance = require("../middleware/maintenanceMiddleware");
 const upload = multer({ storage: multer.memoryStorage() });
 
 router.post("/forgot-password", userController.forgotPassword);
+router.post("/refresh-token", userController.refreshToken);
 router.post("/reset-password", userController.resetPassword);
 router.post("/login", userController.login);
 router.post("/register", userController.register);
@@ -16,7 +17,7 @@ router.use(authenticateToken);
 router.use(checkMaintenance);
 
 router.get("/",authenticateToken, isAdmin, userController.getUsers);
-router.put("/update", authenticateToken, isAdmin,userController.updateUser);
+router.put("/update", authenticateToken, isTeacher,userController.updateUser);
 router.get("/:studentCode",authenticateToken, isAdmin, userController.getUserByStudentCode);
 router.get('/teacher/class/:classId/students', authenticateToken, isTeacher, userController.getStudentsInClass);
 router.post('/teacher/create-student', authenticateToken,isTeacher, userController.teacherCreateStudent);
@@ -30,6 +31,6 @@ router.post('/delete-multiple', authenticateToken, userController.deleteMultiple
 router.get('/deleted/:classId', authenticateToken, userController.getDeletedStudents);
 router.post('/restore', authenticateToken, userController.restoreUser);
 router.post('/hard-delete', authenticateToken, userController.hardDeleteUsers);
-router.post("/refresh-token", userController.refreshToken);
+
 
 module.exports = router;

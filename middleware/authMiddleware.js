@@ -10,14 +10,16 @@ const authenticateToken = (req, res, next) => {
   }
 
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) {
-      return res.status(403).json({ message: "Token không hợp lệ" });
+       if (err) {
+        if (err.name === 'TokenExpiredError') {
+            return res.status(401).json({ message: "Token đã hết hạn" }); 
+        }
+        return res.status(403).json({ message: "Token không hợp lệ" }); 
     }
-
     let roleName = "";
     if (user.roleId === 1) roleName = "admin";
-    else if (user.roleId === 2) roleName = "student"; // Trong ảnh ID 2 là student
-    else if (user.roleId === 3 || user.roleId === 4) roleName = "teacher"; // ID 3 hoặc 4 đều là teacher
+    else if (user.roleId === 2) roleName = "student";
+    else if (user.roleId === 3 || user.roleId === 4) roleName = "teacher"; 
 
     req.user = {
       id: user.id,
