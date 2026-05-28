@@ -155,3 +155,13 @@ exports.getSubmissionCode = async (req, res) => {
         });
     }
 };
+exports.getSubmissionErrors = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const data = await submissionModel.getSubmissionErrors(parseInt(id));
+        res.json({ success: true, ...data });
+    } catch (error) {
+        console.error("Lỗi lấy errors:", error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};

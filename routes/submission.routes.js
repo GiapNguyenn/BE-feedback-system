@@ -29,6 +29,7 @@ router.get("/",authenticateToken,submissionController.getStudentSubmissions);
 router.patch("/:id/pin", authenticateToken, submissionController.togglePin);
 router.delete("/:id", authenticateToken, submissionController.deleteSubmission);
 router.get('/code/:id', submissionController.getSubmissionCode);
+router.get('/:id/errors', authenticateToken, submissionController.getSubmissionErrors);
 router.get("/:id", authenticateToken, submissionController.getSubmissionDetail);
 
 module.exports = router;

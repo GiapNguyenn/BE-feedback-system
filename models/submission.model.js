@@ -248,6 +248,37 @@ const getAllSubmissions = async () => {
 
     return result.recordset;
 };
+const getSubmissionErrors = async (submissionId) => {
+    const pool = await poolPromise;
+
+    const errorsResult = await pool.request()
+        .input("SubmissionId", sql.Int, submissionId)
+        .query(`
+            SELECT de.LineNumber, de.Message, de.Suggestion
+            FROM DetectedErrors de
+            JOIN AnalysisHistory ah ON de.AnalysisId = ah.Id
+            WHERE de.SubmissionId = @SubmissionId
+              AND ah.Id = (
+                  SELECT TOP 1 Id FROM AnalysisHistory
+                  WHERE submissionId = @SubmissionId ORDER BY CreatedAt DESC
+              )
+            ORDER BY de.LineNumber ASC
+        `);
+        const feedbackResult = await pool.request()
+        .input("SubmissionId", sql.Int, submissionId)
+        .query(`
+            SELECT tf.WeaknessAnalysis, tf.Strengths, tf.TeacherComment,
+                   tf.Status, u.fullName AS teacherName
+            FROM TeacherFeedbacks tf
+            LEFT JOIN Users u ON tf.TeacherId = u.Id
+            WHERE tf.SubmissionId = @SubmissionId
+        `);
+
+    return {
+        errors: errorsResult.recordset,
+        feedback: feedbackResult.recordset[0] || null
+    };
+};
 
 
 module.exports = { 
@@ -263,4 +294,5 @@ module.exports = {
     deleteSubmission,
     getSubmissionById,
     getAllSubmissions,
+    getSubmissionErrors
 }
